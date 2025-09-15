@@ -78,17 +78,27 @@ class CouncilClass(AbstractGetBinDataClass):
             for Collection in NextCollections:
                 BinType = Collection.find("strong").text.strip()
                 if BinType:
-                    CollectionDate = datetime.strptime(
-                        Collection.find_all("div", {"style": "display:table-cell;"})[1]
-                        .get_text()
-                        .strip(),
-                        "%a, %d %b %Y",
-                    )
-                    dict_data = {
-                        "type": BinType,
-                        "collectionDate": CollectionDate.strftime("%d/%m/%Y"),
-                    }
-                    data["bins"].append(dict_data)
+                    # Bintype was filtered only by loooking at the <strong> tag. Council has changed site and added 
+                    # other text in the divs which broke previous method (around may 2025)
+                    # added additional check to see if we see more then 1 table cells in the bintype data block
+                    
+                    if len(Collection.find_all("div", {"style": "display:table-cell;"})) > 1:
+                        # If we have more than 1 table cell, we can assume its bin info, so retrieve date
+                    
+                        CollectionDate = datetime.strptime(
+                            Collection.find_all("div", {"style": "display:table-cell;"})[1]
+                            .get_text()
+                            .strip(),
+                            "%a, %d %b %Y",
+                        )
+                        dict_data = {
+                            "type": BinType,
+                            "collectionDate": CollectionDate.strftime("%d/%m/%Y"),
+                        }
+                        data["bins"].append(dict_data)
+                    # else:
+                    # If we have 1 or less table cells, then we assume its not bin info, and skip
+                    # this detection block needs more validation, as it's a bit delicate at the moment.
 
         except Exception as e:
             # Here you can log the exception if needed
